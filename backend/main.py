@@ -11,13 +11,16 @@ from groq import Groq
 import json
 import uvicorn
 import re
+import os 
+from dotenv import load_dotenv
 
 # -------------------------------
 # Configure Groq API (FREE TIER)
 # Get your FREE key from: https://console.groq.com/keys
 # -------------------------------
+load_dotenv()
 client = Groq(
-    api_key="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"  # ← Replace with your FREE Groq key
+    api_key=os.getenv("API_KEY")  # ← Replace with your FREE Groq key
 )
 
 # -------------------------------
