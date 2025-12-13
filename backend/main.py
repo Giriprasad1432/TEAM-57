@@ -1,5 +1,5 @@
 # -------------------------------
-# AI Career Guidance System
+# AI Career Guidance System - GROQ (FREE & FAST)
 # 16-Question Personalized Career Recommendation
 # -------------------------------
 
@@ -7,31 +7,26 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
-import google.generativeai as genai
+from groq import Groq
 import json
 import uvicorn
 import re
 
 # -------------------------------
-# Configure Google Gemini 2.0 Flash
+# Configure Groq API (FREE TIER)
+# Get your FREE key from: https://console.groq.com/keys
 # -------------------------------
-genai.configure(api_key="AIzaSyBZnvo00kpxI5NDLNoBUeflWJHt3dS75DU")  # Get new key!
-
-model = genai.GenerativeModel(
-    model_name="models/gemini-1.5-flash",  # Added "models/" prefix
-    generation_config={
-        "temperature": 0.8,
-        "max_output_tokens": 3000,
-        "top_p": 0.95,
-    }
+client = Groq(
+    api_key="api_key"  # ← Replace with your FREE Groq key
 )
+
 # -------------------------------
 # Initialize FastAPI
 # -------------------------------
 app = FastAPI(
     title="AI Career Guidance System",
-    description="Personalized career recommendations using 16-question assessment",
-    version="1.0.0"
+    description="Powered by Groq - Lightning Fast & Free",
+    version="2.0.0"
 )
 
 # -------------------------------
@@ -94,11 +89,9 @@ DEFAULT_PROFILE = {
 # -------------------------------
 def extract_json_from_text(text: str) -> dict:
     """Extract JSON from text that might contain markdown or extra text"""
-    # Remove markdown code blocks
     text = re.sub(r'json\s*', '', text)
     text = re.sub(r'\s*', '', text)
     
-    # Try to find JSON object in the text
     json_match = re.search(r'\{[\s\S]*\}', text)
     if json_match:
         try:
@@ -106,24 +99,36 @@ def extract_json_from_text(text: str) -> dict:
         except:
             pass
     
-    # If all else fails, try parsing the whole text
     return json.loads(text.strip())
 
-def call_gemini(prompt: str) -> dict:
-    """Call Gemini API and parse JSON response with better error handling"""
+def call_groq(prompt: str) -> dict:
+    """Call Groq API and parse JSON response"""
     try:
-        response = model.generate_content(prompt)
-        text = response.text.strip()
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert AI Career Counselor. Always respond with valid JSON only, no markdown, no extra text."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            model="llama-3.3-70b-versatile",  # Fast & capable free model
+            temperature=0.8,
+            max_tokens=4000,
+            top_p=0.95
+        )
         
-        # Try to extract and parse JSON
+        text = chat_completion.choices[0].message.content.strip()
         return extract_json_from_text(text)
         
     except json.JSONDecodeError as e:
         print(f"JSON Parse Error: {e}")
-        print(f"Response text: {text[:500]}...")
-        raise HTTPException(status_code=500, detail=f"AI returned invalid JSON format")
+        raise HTTPException(status_code=500, detail="AI returned invalid JSON format")
     except Exception as e:
-        print(f"AI Error: {str(e)}")
+        print(f"Groq API Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI generation error: {str(e)}")
 
 def format_questionnaire_data(data: dict) -> str:
@@ -153,8 +158,9 @@ def merge_with_defaults(user_data: QuestionnaireInput) -> dict:
     """Merge user input with default values"""
     result = DEFAULT_PROFILE.copy()
     
-    user_dict = user_data.dict(exclude_none=True)
-    result.update(user_dict)
+    if user_data:
+        user_dict = user_data.dict(exclude_none=True)
+        result.update(user_dict)
     
     return result
 
@@ -168,7 +174,6 @@ async def comprehensive_career_analysis(data: Optional[QuestionnaireInput] = Non
     If no data provided, uses DEFAULT_PROFILE for demo
     """
     
-    # Use default profile if no data provided
     if data is None:
         profile_data = DEFAULT_PROFILE
         print("📝 Using default demo profile...")
@@ -275,7 +280,7 @@ Provide comprehensive career guidance with these sections. Use natural, conversa
 Remember: Be specific, be encouraging, and make everything actionable. Avoid corporate buzzwords. Write like you're a knowledgeable mentor talking to a student.
 """
     
-    result = call_gemini(prompt)
+    result = call_groq(prompt)
     
     print("✅ Career analysis generated successfully!")
     return result
@@ -316,7 +321,7 @@ Return ONLY valid JSON:
 }}
 """
     
-    return call_gemini(prompt)
+    return call_groq(prompt)
 
 # -------------------------------
 # ENDPOINT 3: Project Ideas Generator
@@ -362,7 +367,7 @@ Return ONLY valid JSON:
 }}
 """
     
-    return call_gemini(prompt)
+    return call_groq(prompt)
 
 # -------------------------------
 # ENDPOINT 4: Interview Mastery
@@ -414,7 +419,7 @@ Return ONLY valid JSON:
 }}
 """
     
-    return call_gemini(prompt)
+    return call_groq(prompt)
 
 # -------------------------------
 # TEST ENDPOINT: Get Demo with Default Data
@@ -425,9 +430,8 @@ async def demo_analysis():
     GET endpoint to see demo analysis with default profile
     Perfect for testing without sending POST data
     """
-    print("🎯 Generating demo career analysis...")
+    print("🎯 Generating demo career analysis with Groq...")
     
-    # Call the main analysis with no data (will use defaults)
     result = await comprehensive_career_analysis(None)
     
     return {
@@ -442,10 +446,11 @@ async def demo_analysis():
 @app.get("/")
 async def root():
     return {
-        "message": "🎓 AI Career Guidance System - Ready!",
+        "message": "🎓 AI Career Guidance System - Powered by Groq! ⚡",
         "version": "2.0.0",
         "status": "active",
-        "quick_test": "Visit /demo-analysis to see instant results with sample data!",
+        "ai_model": "llama-3.3-70b-versatile (Groq)",
+        "quick_test": "Visit /demo-analysis to see instant results!",
         "endpoints": {
             "demo": "/demo-analysis (GET - no data needed!)",
             "main": "/comprehensive-career-analysis (POST)",
@@ -460,7 +465,8 @@ async def root():
 async def health_check():
     return {
         "status": "healthy", 
-        "ai_model": "gemini-2.0-flash-exp",
+        "ai_model": "llama-3.3-70b-versatile",
+        "provider": "Groq (FREE & FAST)",
         "default_profile_loaded": bool(DEFAULT_PROFILE)
     }
 
@@ -469,13 +475,14 @@ async def health_check():
 # -------------------------------
 if _name_ == "_main_":
     print("=" * 70)
-    print("🚀 AI CAREER GUIDANCE SYSTEM STARTING...")
+    print("🚀 AI CAREER GUIDANCE SYSTEM - POWERED BY GROQ (FREE)")
     print("=" * 70)
     print("📍 Main URL: http://localhost:8000")
     print("📍 API Docs: http://localhost:8000/docs")
     print("📍 Quick Demo: http://localhost:8000/demo-analysis")
     print("=" * 70)
-    print("💡 TIP: Open /demo-analysis in browser to see instant results!")
+    print("💡 Get FREE Groq API key: https://console.groq.com/keys")
+    print("⚡ Lightning fast inference - No rate limit issues!")
     print("=" * 70)
     
     uvicorn.run(
