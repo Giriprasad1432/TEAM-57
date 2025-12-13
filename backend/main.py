@@ -1,6 +1,6 @@
 # -------------------------------
-# AI Career Guidance System - GROQ (FREE & FAST)
-# 16-Question Personalized Career Recommendation
+# AI Career Guidance System - GROQ (FIXED VERSION)
+# Properly formatted output with spacing fixes
 # -------------------------------
 
 from fastapi import FastAPI, HTTPException
@@ -17,7 +17,7 @@ import re
 # Get your FREE key from: https://console.groq.com/keys
 # -------------------------------
 client = Groq(
-    api_key="api_key"  # ← Replace with your FREE Groq key
+    api_key="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"  # ← Replace with your FREE Groq key
 )
 
 # -------------------------------
@@ -25,8 +25,8 @@ client = Groq(
 # -------------------------------
 app = FastAPI(
     title="AI Career Guidance System",
-    description="Powered by Groq - Lightning Fast & Free",
-    version="2.0.0"
+    description="Powered by Groq - Lightning Fast & Free - FIXED VERSION",
+    version="2.1.0"
 )
 
 # -------------------------------
@@ -87,11 +87,50 @@ DEFAULT_PROFILE = {
 # -------------------------------
 # Helper Functions
 # -------------------------------
+def fix_text_spacing(text: str) -> str:
+    """Fix common spacing issues in AI-generated text"""
+    if not isinstance(text, str):
+        return text
+    
+    # Add space after punctuation if missing
+    text = re.sub(r'([.!?,;:])([A-Za-z])', r'\1 \2', text)
+    
+    # Add space between lowercase and uppercase (camelCase splits)
+    text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+    
+    # Fix common concatenations
+    text = re.sub(r'(\w)(and|but|or|the|with|from|have|has)([A-Z])', r'\1 \2 \3', text)
+    
+    # Remove multiple spaces
+    text = re.sub(r'\s+', ' ', text)
+    
+    return text.strip()
+
+def clean_json_response(data: dict) -> dict:
+    """Clean all text fields in JSON response"""
+    if isinstance(data, dict):
+        cleaned = {}
+        for key, value in data.items():
+            if isinstance(value, str):
+                cleaned[key] = fix_text_spacing(value)
+            elif isinstance(value, list):
+                cleaned[key] = [clean_json_response(item) if isinstance(item, (dict, list)) else fix_text_spacing(item) if isinstance(item, str) else item for item in value]
+            elif isinstance(value, dict):
+                cleaned[key] = clean_json_response(value)
+            else:
+                cleaned[key] = value
+        return cleaned
+    elif isinstance(data, list):
+        return [clean_json_response(item) if isinstance(item, (dict, list)) else fix_text_spacing(item) if isinstance(item, str) else item for item in data]
+    return data
+
 def extract_json_from_text(text: str) -> dict:
     """Extract JSON from text that might contain markdown or extra text"""
-    text = re.sub(r'json\s*', '', text)
-    text = re.sub(r'\s*', '', text)
+    # Remove markdown code blocks
+    text = re.sub(r'```json\s*', '', text)
+    text = re.sub(r'```\s*', '', text)
     
+    # Find JSON object
     json_match = re.search(r'\{[\s\S]*\}', text)
     if json_match:
         try:
@@ -102,33 +141,52 @@ def extract_json_from_text(text: str) -> dict:
     return json.loads(text.strip())
 
 def call_groq(prompt: str) -> dict:
-    """Call Groq API and parse JSON response"""
+    """Call Groq API and parse JSON response with proper formatting"""
     try:
         chat_completion = client.chat.completions.create(
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert AI Career Counselor. Always respond with valid JSON only, no markdown, no extra text."
+                    "content": """You are an expert AI Career Counselor. 
+
+CRITICAL FORMATTING RULES:
+1. Always respond with valid JSON only
+2. Use proper spacing between ALL words in every text field
+3. Write naturally with complete, well-spaced sentences
+4. No markdown, no code blocks, no extra formatting
+5. Add proper punctuation and spacing after periods, commas
+6. Make text readable and professional
+
+Your JSON must be perfectly formatted and all text must have proper spacing."""
                 },
                 {
                     "role": "user",
                     "content": prompt
                 }
             ],
-            model="llama-3.3-70b-versatile",  # Fast & capable free model
-            temperature=0.8,
+            model="llama-3.3-70b-versatile",
+            temperature=0.7,  # Lower temperature for more consistent output
             max_tokens=4000,
-            top_p=0.95
+            top_p=0.9
         )
         
         text = chat_completion.choices[0].message.content.strip()
-        return extract_json_from_text(text)
+        
+        # Parse JSON
+        result = extract_json_from_text(text)
+        
+        # CRITICAL: Clean all text spacing issues
+        result = clean_json_response(result)
+        
+        print("✅ Response cleaned and formatted successfully")
+        return result
         
     except json.JSONDecodeError as e:
-        print(f"JSON Parse Error: {e}")
+        print(f"❌ JSON Parse Error: {e}")
+        print(f"Raw response (first 500 chars): {text[:500] if 'text' in locals() else 'No response'}")
         raise HTTPException(status_code=500, detail="AI returned invalid JSON format")
     except Exception as e:
-        print(f"Groq API Error: {str(e)}")
+        print(f"❌ Groq API Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI generation error: {str(e)}")
 
 def format_questionnaire_data(data: dict) -> str:
@@ -186,22 +244,32 @@ async def comprehensive_career_analysis(data: Optional[QuestionnaireInput] = Non
     prompt = f"""
 You are an expert AI Career Counselor with deep knowledge of industry trends, job markets, and student career development.
 
-*IMPORTANT*: Your response must be encouraging, personalized, and actionable. Vary your language and avoid repetitive corporate phrases.
+**IMPORTANT FORMATTING**: 
+- Use proper spacing between ALL words
+- Write naturally with complete sentences
+- Add proper punctuation
+- Make text easy to read
+
+**IMPORTANT CONTENT**: 
+- Be encouraging and personalized
+- Provide actionable advice
+- Avoid repetitive corporate phrases
+- Vary your language
 
 Analyze this student's career profile thoroughly:
 
 {user_profile}
 
-Provide comprehensive career guidance with these sections. Use natural, conversational language:
+Provide comprehensive career guidance with these sections:
 
-*Return ONLY valid JSON (no markdown, no extra text):*
+**Return ONLY valid JSON (no markdown, no extra text):**
 
 {{
   "recommended_careers": [
     {{
       "career_name": "Specific job title",
       "match_percentage": 85,
-      "reason_for_match": "Detailed explanation why this fits their profile (2-3 sentences, use varied language)",
+      "reason_for_match": "Detailed explanation why this fits their profile (2-3 well-spaced sentences)",
       "typical_salary_range": "INR range for India or USD for global",
       "job_outlook": "Growth prospects in next 3-5 years",
       "day_to_day_work": "What they'll actually do daily"
@@ -271,13 +339,13 @@ Provide comprehensive career guidance with these sections. Use natural, conversa
       "success_metric": "Success criteria"
     }}
   }},
-  "personalized_message": "Write a 3-4 sentence encouraging message addressing their specific situation, strengths, and potential. Be genuine and motivating, not generic. Mention something specific from their profile.",
+  "personalized_message": "Write 3-4 encouraging sentences addressing their specific situation. Use proper spacing. Be genuine and motivating. Mention something specific from their profile.",
   "red_flags_to_avoid": ["Common mistakes beginners make in this career path"],
   "networking_tips": ["Specific ways to connect with professionals in these fields"],
   "salary_negotiation_prep": ["Tips for discussing compensation when they get offers"]
 }}
 
-Remember: Be specific, be encouraging, and make everything actionable. Avoid corporate buzzwords. Write like you're a knowledgeable mentor talking to a student.
+CRITICAL: Ensure ALL text fields have proper spacing between words. Write naturally and professionally.
 """
     
     result = call_groq(prompt)
@@ -304,7 +372,7 @@ Based on this student profile:
 
 {user_profile}
 
-Provide the top 5 career matches. Be specific and honest about fit.
+Provide the top 5 career matches. Be specific and honest about fit. USE PROPER SPACING.
 
 Return ONLY valid JSON:
 {{
@@ -317,11 +385,12 @@ Return ONLY valid JSON:
       "first_step": "Immediate action they should take"
     }}
   ],
-  "quick_advice": "2-3 sentence summary of what they should focus on now"
+  "quick_advice": "2-3 sentence summary with proper spacing of what they should focus on now"
 }}
 """
     
-    return call_groq(prompt)
+    result = call_groq(prompt)
+    return result
 
 # -------------------------------
 # ENDPOINT 3: Project Ideas Generator
@@ -348,6 +417,8 @@ Focus on projects that:
 - Impress recruiters and hiring managers
 - Can be completed in 2-4 weeks
 
+USE PROPER SPACING IN ALL TEXT.
+
 Return ONLY valid JSON:
 {{
   "projects": [
@@ -367,7 +438,8 @@ Return ONLY valid JSON:
 }}
 """
     
-    return call_groq(prompt)
+    result = call_groq(prompt)
+    return result
 
 # -------------------------------
 # ENDPOINT 4: Interview Mastery
@@ -388,7 +460,7 @@ Create a comprehensive interview prep guide for this student:
 
 {user_profile}
 
-Cover technical, behavioral, and practical aspects.
+Cover technical, behavioral, and practical aspects. USE PROPER SPACING.
 
 Return ONLY valid JSON:
 {{
@@ -419,7 +491,8 @@ Return ONLY valid JSON:
 }}
 """
     
-    return call_groq(prompt)
+    result = call_groq(prompt)
+    return result
 
 # -------------------------------
 # TEST ENDPOINT: Get Demo with Default Data
@@ -446,10 +519,11 @@ async def demo_analysis():
 @app.get("/")
 async def root():
     return {
-        "message": "🎓 AI Career Guidance System - Powered by Groq! ⚡",
-        "version": "2.0.0",
+        "message": "🎓 AI Career Guidance System - Powered by Groq! ⚡ (FIXED VERSION)",
+        "version": "2.1.0",
         "status": "active",
         "ai_model": "llama-3.3-70b-versatile (Groq)",
+        "improvements": "Fixed text spacing issues in all responses",
         "quick_test": "Visit /demo-analysis to see instant results!",
         "endpoints": {
             "demo": "/demo-analysis (GET - no data needed!)",
@@ -467,19 +541,26 @@ async def health_check():
         "status": "healthy", 
         "ai_model": "llama-3.3-70b-versatile",
         "provider": "Groq (FREE & FAST)",
+        "version": "2.1.0 - Fixed spacing issues",
         "default_profile_loaded": bool(DEFAULT_PROFILE)
     }
 
 # -------------------------------
 # Run Server
 # -------------------------------
-if _name_ == "_main_":
+if __name__ == "__main__":
     print("=" * 70)
-    print("🚀 AI CAREER GUIDANCE SYSTEM - POWERED BY GROQ (FREE)")
+    print("🚀 AI CAREER GUIDANCE SYSTEM - FIXED VERSION")
     print("=" * 70)
     print("📍 Main URL: http://localhost:8000")
     print("📍 API Docs: http://localhost:8000/docs")
     print("📍 Quick Demo: http://localhost:8000/demo-analysis")
+    print("=" * 70)
+    print("✅ IMPROVEMENTS:")
+    print("   - Fixed text spacing issues")
+    print("   - Better formatting in all responses")
+    print("   - Lower temperature for consistency")
+    print("   - Automatic text cleaning")
     print("=" * 70)
     print("💡 Get FREE Groq API key: https://console.groq.com/keys")
     print("⚡ Lightning fast inference - No rate limit issues!")
