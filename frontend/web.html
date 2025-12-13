@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Career Guidance System</title>
+    <title>AI Career Guidance - Personalized Analysis</title>
     <style>
         * {
             margin: 0;
@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -30,18 +30,13 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 40px 30px;
+            padding: 30px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 32px;
+            font-size: 28px;
             margin-bottom: 10px;
-        }
-
-        .header p {
-            opacity: 0.9;
-            font-size: 16px;
         }
 
         .progress-bar {
@@ -49,7 +44,6 @@
             height: 6px;
             margin-top: 20px;
             border-radius: 3px;
-            overflow: hidden;
         }
 
         .progress-fill {
@@ -59,17 +53,18 @@
             transition: width 0.3s ease;
         }
 
-        .form-content {
-            padding: 40px 30px;
+        .content {
+            padding: 30px;
+            min-height: 500px;
         }
 
-        .question-section {
+        .section {
             display: none;
-            animation: fadeIn 0.4s ease;
         }
 
-        .question-section.active {
+        .section.active {
             display: block;
+            animation: fadeIn 0.4s ease;
         }
 
         @keyframes fadeIn {
@@ -77,10 +72,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Questions */
         .question-title {
             font-size: 20px;
             color: #333;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             font-weight: 600;
         }
 
@@ -88,59 +84,38 @@
             display: inline-block;
             background: #667eea;
             color: white;
-            width: 30px;
-            height: 30px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             text-align: center;
-            line-height: 30px;
+            line-height: 36px;
             margin-right: 10px;
-            font-size: 14px;
         }
 
         .options-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 12px;
             margin-bottom: 30px;
         }
 
         .option-card {
             border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 15px 40px 15px 15px;
+            border-radius: 10px;
+            padding: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
-            background: white;
         }
 
         .option-card:hover {
             border-color: #667eea;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
         }
 
         .option-card.selected {
             border-color: #667eea;
             background: #f0f4ff;
-        }
-
-        .option-card input[type="checkbox"] {
-            position: absolute;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .option-card .label-text {
-            display: block;
-            cursor: pointer;
-            color: #333;
-            font-size: 15px;
-        }
-
-        .option-card.selected .label-text {
-            color: #667eea;
-            font-weight: 600;
         }
 
         .checkmark {
@@ -149,10 +124,9 @@
             right: 15px;
             height: 20px;
             width: 20px;
-            background-color: white;
+            background: white;
             border: 2px solid #ddd;
             border-radius: 4px;
-            transition: all 0.3s ease;
         }
 
         .option-card.selected .checkmark {
@@ -177,111 +151,128 @@
             display: block;
         }
 
-        select, textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 16px;
-            margin-bottom: 20px;
-            transition: border-color 0.3s ease;
+        /* Chat */
+        .chat-section {
+            display: flex;
+            flex-direction: column;
+            height: 550px;
         }
 
-        select:focus, textarea:focus {
+        .chat-header {
+            padding: 20px;
+            background: #667eea;
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            margin-left: auto;
+        }
+
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.agent .message-content {
+            background: white;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #e5e7eb;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        .chat-input:focus {
             outline: none;
             border-color: #667eea;
         }
 
-        textarea {
-            min-height: 100px;
-            resize: vertical;
+        /* Buttons */
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .btn-container {
             display: flex;
-            gap: 15px;
+            justify-content: space-between;
             margin-top: 30px;
         }
 
-        .btn {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .btn-prev {
+            background: #f0f4ff;
+            color: #667eea;
         }
 
-        .btn-next {
+        /* Analysis */
+        .analysis-header {
             background: #667eea;
             color: white;
-        }
-
-        .btn-next:hover:not(:disabled) {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-prev {
-            background: #f0f0f0;
-            color: #333;
-        }
-
-        .btn-prev:hover:not(:disabled) {
-            background: #e0e0e0;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .loading {
-            display: none;
+            padding: 25px;
             text-align: center;
-            padding: 60px 30px;
+            border-radius: 12px 12px 0 0;
         }
 
-        .loading.active {
-            display: block;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .results {
-            display: none;
-        }
-
-        .results.active {
-            display: block;
-        }
-
-        .results-content {
-            padding: 40px 30px;
-            max-height: 80vh;
-            overflow-y: auto;
+        .analysis-content {
+            padding: 30px;
         }
 
         .section-title {
-            font-size: 24px;
             color: #333;
-            margin: 30px 0 20px 0;
+            font-size: 22px;
+            margin: 30px 0 20px;
             padding-bottom: 10px;
             border-bottom: 3px solid #667eea;
             display: flex;
@@ -289,708 +280,490 @@
             gap: 10px;
         }
 
-        .career-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            border-left: 5px solid #667eea;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .career-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .career-card, .skill-card, .cert-card, .project-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
             margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
+            border-radius: 0 8px 8px 0;
+            transition: all 0.3s ease;
         }
 
-        .career-card h3 {
-            color: #667eea;
-            font-size: 22px;
-            margin: 0;
+        .career-card:hover, .skill-card:hover, .cert-card:hover, .project-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
         }
 
         .match-badge {
             display: inline-block;
-            background: #667eea;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
-            padding: 8px 20px;
-            border-radius: 25px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            margin-left: 10px;
+        }
+
+        .card-details {
+            color: #666;
             font-size: 14px;
-            font-weight: 600;
+            line-height: 1.8;
         }
 
-        .career-info {
-            margin: 12px 0;
-            line-height: 1.6;
-            color: #333;
+        .card-details li {
+            margin-bottom: 8px;
+            list-style: none;
+            padding-left: 20px;
+            position: relative;
         }
 
-        .career-info strong {
+        .card-details li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
             color: #667eea;
-            display: inline-block;
-            min-width: 140px;
+            font-weight: bold;
         }
 
-        .message-box {
-            background: linear-gradient(135deg, #f0f7ff 0%, #e6f2ff 100%);
-            border-left: 4px solid #667eea;
+        .roadmap-container {
+            background: linear-gradient(135deg, #f0f4ff, #faf5ff);
             padding: 25px;
             border-radius: 12px;
             margin: 20px 0;
-            line-height: 1.8;
-            font-size: 16px;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
-        }
-
-        .skills-section {
-            background: #f9fafb;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-
-        .skill-gap {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            border-left: 3px solid #fbbf24;
-        }
-
-        .skill-gap h4 {
-            color: #f59e0b;
-            margin-bottom: 8px;
-        }
-
-        .cert-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 15px 0;
-            border: 2px solid #e0e0e0;
-            transition: all 0.3s ease;
-        }
-
-        .cert-card:hover {
-            border-color: #667eea;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-        }
-
-        .cert-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .cert-name {
-            font-size: 18px;
-            font-weight: 600;
-            color: #667eea;
-        }
-
-        .difficulty-badge {
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .difficulty-beginner {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .difficulty-intermediate {
-            background: #fef3c7;
-            color: #92400e;
-        }
-
-        .difficulty-advanced {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .project-card {
-            background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
-            border-radius: 12px;
-            padding: 20px;
-            margin: 15px 0;
-            border-left: 4px solid #f97316;
-        }
-
-        .project-card h4 {
-            color: #ea580c;
-            margin-bottom: 10px;
-            font-size: 18px;
-        }
-
-        .tech-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 10px 0;
-        }
-
-        .tech-tag {
-            background: #667eea;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 13px;
         }
 
         .roadmap-month {
             background: white;
-            border-radius: 10px;
             padding: 20px;
-            margin: 15px 0;
-            border-left: 4px solid #10b981;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
         }
 
         .roadmap-month h4 {
-            color: #059669;
-            margin-bottom: 15px;
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 17px;
         }
 
-        .roadmap-goals {
+        .roadmap-actions {
             list-style: none;
-            padding: 0;
         }
 
-        .roadmap-goals li {
-            padding: 8px 0 8px 25px;
+        .roadmap-actions li {
+            padding: 8px 0;
+            padding-left: 30px;
             position: relative;
+            color: #555;
         }
 
-        .roadmap-goals li:before {
+        .roadmap-actions li:before {
             content: "✓";
             position: absolute;
             left: 0;
-            color: #10b981;
+            color: #4CAF50;
             font-weight: bold;
+            font-size: 18px;
         }
 
-        .tips-list {
-            background: #fef3c7;
-            border-radius: 10px;
+        .job-search-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
             padding: 20px;
-            margin: 15px 0;
+            border-radius: 8px;
+            margin: 20px 0;
         }
 
-        .tips-list ul {
-            padding-left: 20px;
+        .job-search-item {
+            margin-bottom: 12px;
         }
 
-        .tips-list li {
-            margin: 8px 0;
-            line-height: 1.6;
+        .job-search-item strong {
+            color: #856404;
         }
 
-        .connection-status {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            padding: 10px 20px;
-            border-radius: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            font-size: 14px;
-            font-weight: 600;
-            z-index: 1000;
+        .final-advice-box {
+            background: linear-gradient(135deg, #667eea20, #764ba220);
+            padding: 25px;
+            border-radius: 12px;
+            border-left: 5px solid #667eea;
+            margin-top: 30px;
+            font-style: italic;
+            color: #444;
+            line-height: 1.8;
         }
 
-        .status-connected {
-            color: #10b981;
+        .spinner {
+            border: 3px solid rgba(102, 126, 234, 0.2);
+            border-radius: 50%;
+            border-top: 3px solid #667eea;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 40px auto;
         }
 
-        .status-disconnected {
-            color: #ef4444;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chat-section {
+                height: 450px;
+            }
+            
+            .btn-container {
+                flex-direction: column;
+                gap: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="connection-status" id="connectionStatus">
-        <span id="statusText">Checking connection...</span>
-    </div>
-
     <div class="container">
         <div class="header">
-            <h1>🎓 AI Career Guidance System</h1>
-            <p>Get personalized career recommendations powered by Groq AI</p>
+            <h1>🎯 AI Career Guidance</h1>
+            <p>Comprehensive personalized analysis with roadmap & strategy</p>
             <div class="progress-bar">
-                <div class="progress-fill" id="progressBar"></div>
+                <div class="progress-fill" id="progressFill"></div>
             </div>
         </div>
 
-        <div class="form-content" id="formContent">
-            <!-- Question 1: Education Background -->
-            <div class="question-section active" data-step="1">
+        <div class="content">
+            <!-- Questions Section -->
+            <div id="questionsSection" class="section active">
                 <div class="question-title">
-                    <span class="question-number">1</span>
-                    What is your educational background?
+                    <span class="question-number" id="qNumber">1</span>
+                    <span id="questionText"></span>
                 </div>
-                <select id="education_level" required>
-                    <option value="">Select your education level</option>
-                    <option value="10th Pass">10th Pass</option>
-                    <option value="12th Pass - Science (MPC)">12th Pass - Science (MPC)</option>
-                    <option value="12th Pass - Science (BIPC)">12th Pass - Science (BIPC)</option>
-                    <option value="12th Pass - Commerce">12th Pass - Commerce</option>
-                    <option value="12th Pass - Arts">12th Pass - Arts</option>
-                    <option value="B.Tech/B.E. Student">B.Tech/B.E. Student</option>
-                    <option value="BCA/BSc CS Student">BCA/BSc CS Student</option>
-                    <option value="MBBS/Medical Student">MBBS/Medical Student</option>
-                    <option value="Pharmacy Student">Pharmacy Student</option>
-                    <option value="B.Com Student">B.Com Student</option>
-                    <option value="BA Student">BA Student</option>
-                    <option value="MBA Student">MBA Student</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-
-            <!-- Question 2: Areas of Interest -->
-            <div class="question-section" data-step="2">
-                <div class="question-title">
-                    <span class="question-number">2</span>
-                    What areas interest you the most? (Select multiple)
+                <div class="options-grid" id="optionsGrid"></div>
+                <div class="btn-container">
+                    <button class="btn btn-prev" id="prevBtn" onclick="prevQuestion()" disabled>Previous</button>
+                    <button class="btn" id="nextBtn" onclick="nextQuestion()">Next Question</button>
                 </div>
-                <div class="options-grid" id="interestOptions"></div>
             </div>
 
-            <!-- Question 3: Technical Skills -->
-            <div class="question-section" data-step="3">
-                <div class="question-title">
-                    <span class="question-number">3</span>
-                    What technical skills do you have? (Select all that apply)
+            <!-- Chat Section -->
+            <div id="chatSection" class="section">
+                <div class="chat-section">
+                    <div class="chat-header">
+                        <h3>💬 Career Coach Alex</h3>
+                        <p>Ask quick questions about your career path</p>
+                    </div>
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message agent">
+                            <div class="message-content">Hi! I've reviewed your profile. Feel free to ask me anything specific about skills, jobs, or next steps. Keep it focused!</div>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="Type your question..." onkeypress="handleKey(event)">
+                        <button class="btn" onclick="sendMessage()">Send</button>
+                    </div>
                 </div>
-                <div class="options-grid" id="skillsOptions"></div>
-            </div>
-
-            <!-- Question 4: Preferred Activities -->
-            <div class="question-section" data-step="4">
-                <div class="question-title">
-                    <span class="question-number">4</span>
-                    What type of work activities do you enjoy?
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn" onclick="generateAnalysis()" id="analyzeBtn">📊 Get Complete Analysis</button>
                 </div>
-                <div class="options-grid" id="activitiesOptions"></div>
             </div>
 
-            <!-- Question 5: Work Style -->
-            <div class="question-section" data-step="5">
-                <div class="question-title">
-                    <span class="question-number">5</span>
-                    How do you prefer to work?
+            <!-- Analysis Section -->
+            <div id="analysisSection" class="section">
+                <div class="analysis-header">
+                    <h2>📈 Your Personalized Career Analysis</h2>
+                    <p>Complete roadmap based on your profile and conversation</p>
                 </div>
-                <div class="options-grid" id="workStyleOptions"></div>
-            </div>
-
-            <!-- Question 6: Career Priorities -->
-            <div class="question-section" data-step="6">
-                <div class="question-title">
-                    <span class="question-number">6</span>
-                    What matters most to you in your career?
+                <div class="analysis-content" id="analysisContent">
+                    <div style="text-align: center; padding: 50px;">
+                        <div class="spinner"></div>
+                        <p style="margin-top: 20px; color: #666;">Generating comprehensive analysis...</p>
+                    </div>
                 </div>
-                <div class="options-grid" id="prioritiesOptions"></div>
             </div>
-
-            <!-- Question 7: Career Vision -->
-            <div class="question-section" data-step="7">
-                <div class="question-title">
-                    <span class="question-number">7</span>
-                    Where do you see yourself in 5 years?
-                </div>
-                <textarea id="career_vision" placeholder="Describe your career goals, dreams, or aspirations... Be as specific as possible!"></textarea>
-            </div>
-
-            <!-- Navigation Buttons -->
-            <div class="btn-container">
-                <button class="btn btn-prev" id="prevBtn" disabled>← Previous</button>
-                <button class="btn btn-next" id="nextBtn">Next →</button>
-            </div>
-        </div>
-
-        <!-- Loading State -->
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <h2>🔍 Analyzing Your Profile...</h2>
-            <p>Our Groq AI is crafting personalized recommendations for you</p>
-            <p style="margin-top: 10px; color: #666;">This may take 10-15 seconds...</p>
-        </div>
-
-        <!-- Results Section -->
-        <div class="results" id="results">
-            <div class="results-content" id="resultsContent"></div>
         </div>
     </div>
 
     <script>
-        let currentStep = 1;
-        const totalSteps = 7;
+        const API_URL = 'http://localhost:8000';
+        let currentQ = 1;
+        let totalQ = 0;
+        let answers = {};
+        let sessionId = null;
+        let questions = [];
 
-        // Check backend connection
-        async function checkConnection() {
-            const statusEl = document.getElementById('statusText');
+        async function init() {
             try {
-                const response = await fetch('http://localhost:8000/health');
-                const data = await response.json();
-                statusEl.textContent = '✓ Connected to Backend';
-                statusEl.className = 'status-connected';
-            } catch (error) {
-                statusEl.textContent = '✗ Backend Offline';
-                statusEl.className = 'status-disconnected';
+                const res = await fetch(`${API_URL}/questions`);
+                const data = await res.json();
+                questions = data.questions;
+                totalQ = data.total;
+                showQuestion(1);
+            } catch (err) {
+                alert('Error loading questions. Please refresh.');
             }
         }
 
-        checkConnection();
-
-        // Dynamic options based on education
-        const interestsByEducation = {
-            'MPC': ['Data Science', 'Machine Learning', 'Software Development', 'Robotics', 'Cybersecurity', 'Cloud Computing'],
-            'BIPC': ['Healthcare Analytics', 'Medical Research', 'Biotechnology', 'Pharmaceutical Research', 'Clinical Data Analysis', 'Public Health'],
-            'Commerce': ['Financial Analysis', 'Business Analytics', 'Marketing', 'Entrepreneurship', 'Accounting', 'Investment Banking'],
-            'Arts': ['Content Writing', 'Digital Marketing', 'UX Design', 'Social Media Management', 'Psychology', 'Education'],
-            'Engineering': ['AI & ML', 'Data Engineering', 'DevOps', 'Blockchain', 'IoT', 'Mobile Development'],
-            'Medical': ['Medical AI', 'Telemedicine', 'Health Informatics', 'Medical Devices', 'Genomics', 'Digital Health'],
-            'Default': ['Technology', 'Business', 'Creative Arts', 'Healthcare', 'Education', 'Research']
-        };
-
-        const skillsByEducation = {
-            'MPC': ['Python', 'C++', 'Data Analysis', 'Mathematics', 'Physics Simulations', 'CAD Software'],
-            'BIPC': ['R Programming', 'SPSS', 'Medical Terminology', 'Laboratory Techniques', 'Research Methods', 'Biostatistics'],
-            'Commerce': ['Excel', 'Tally', 'Financial Modeling', 'SAP', 'PowerBI', 'Accounting Software'],
-            'Arts': ['Adobe Creative Suite', 'Content Management', 'SEO', 'Communication', 'Research', 'Languages'],
-            'Engineering': ['JavaScript', 'React', 'Node.js', 'SQL', 'Git', 'AWS'],
-            'Medical': ['Medical Imaging', 'EMR Systems', 'Medical Coding', 'Statistics', 'Research Design', 'Clinical Trials'],
-            'Default': ['Microsoft Office', 'Communication', 'Problem Solving', 'Critical Thinking', 'Time Management', 'Teamwork']
-        };
-
-        const activities = ['Problem Solving', 'Creative Design', 'Research & Analysis', 'Teaching & Mentoring', 'Leadership & Management', 'Hands-on Building'];
-        const workStyles = ['Independent', 'Team Collaboration', 'Remote Work', 'Flexible Hours'];
-        const priorities = ['High Salary', 'Job Security', 'Learning & Growth', 'Work-Life Balance', 'Impact on Society', 'Creative Freedom'];
-
-        // Initialize checkboxes
-        function createCheckboxOptions(containerId, options) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = options.map((option, i) => `
-                <div class="option-card" data-value="${option}">
-                    <input type="checkbox" id="${containerId}_${i}" value="${option}">
-                    <span class="label-text">${option}</span>
+        function showQuestion(num) {
+            currentQ = num;
+            const q = questions[num - 1];
+            
+            document.getElementById('qNumber').textContent = num;
+            document.getElementById('questionText').textContent = q.question;
+            document.getElementById('progressFill').style.width = `${((num - 1) / totalQ) * 100}%`;
+            document.getElementById('prevBtn').disabled = num === 1;
+            document.getElementById('nextBtn').textContent = num === totalQ ? 'Start Chat →' : 'Next Question';
+            
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+            
+            const selected = answers[`q${num}`] || [];
+            const isMultiple = q.type === 'multiple';
+            const maxSel = q.max_selections || 999;
+            
+            q.options.forEach(opt => {
+                const card = document.createElement('div');
+                card.className = `option-card ${selected.includes(opt) ? 'selected' : ''}`;
+                card.onclick = () => toggleOption(opt, isMultiple, maxSel);
+                card.innerHTML = `
+                    <span class="label-text">${opt}</span>
                     <span class="checkmark"></span>
-                </div>
-            `).join('');
-
-            // Add click handlers
-            container.querySelectorAll('.option-card').forEach(card => {
-                card.addEventListener('click', function(e) {
-                    if (e.target.type !== 'checkbox') {
-                        const checkbox = this.querySelector('input[type="checkbox"]');
-                        checkbox.checked = !checkbox.checked;
-                    }
-                    this.classList.toggle('selected', this.querySelector('input').checked);
-                });
+                `;
+                grid.appendChild(card);
             });
         }
 
-        // Initialize static options
-        createCheckboxOptions('activitiesOptions', activities);
-        createCheckboxOptions('workStyleOptions', workStyles);
-        createCheckboxOptions('prioritiesOptions', priorities);
-
-        // Education change handler
-        document.getElementById('education_level').addEventListener('change', function() {
-            const education = this.value;
-            let interests = interestsByEducation.Default;
-            let skills = skillsByEducation.Default;
-
-            if (education.includes('MPC')) {
-                interests = interestsByEducation.MPC;
-                skills = skillsByEducation.MPC;
-            } else if (education.includes('BIPC')) {
-                interests = interestsByEducation.BIPC;
-                skills = skillsByEducation.BIPC;
-            } else if (education.includes('Commerce')) {
-                interests = interestsByEducation.Commerce;
-                skills = skillsByEducation.Commerce;
-            } else if (education.includes('Arts')) {
-                interests = interestsByEducation.Arts;
-                skills = skillsByEducation.Arts;
-            } else if (education.includes('Tech') || education.includes('BCA')) {
-                interests = interestsByEducation.Engineering;
-                skills = skillsByEducation.Engineering;
-            } else if (education.includes('MBBS') || education.includes('Medical')) {
-                interests = interestsByEducation.Medical;
-                skills = skillsByEducation.Medical;
+        function toggleOption(opt, isMultiple, max) {
+            const key = `q${currentQ}`;
+            if (!answers[key]) answers[key] = [];
+            
+            if (isMultiple) {
+                if (answers[key].includes(opt)) {
+                    answers[key] = answers[key].filter(x => x !== opt);
+                } else if (answers[key].length < max) {
+                    answers[key].push(opt);
+                } else {
+                    alert(`Maximum ${max} selections allowed`);
+                    return;
+                }
+            } else {
+                answers[key] = [opt];
             }
-
-            createCheckboxOptions('interestOptions', interests);
-            createCheckboxOptions('skillsOptions', skills);
-        });
-
-        // Navigation
-        document.getElementById('nextBtn').addEventListener('click', () => changeStep(1));
-        document.getElementById('prevBtn').addEventListener('click', () => changeStep(-1));
-
-        function changeStep(direction) {
-            const sections = document.querySelectorAll('.question-section');
-            sections[currentStep - 1].classList.remove('active');
             
-            currentStep += direction;
-            
-            if (currentStep > totalSteps) {
-                submitForm();
+            showQuestion(currentQ);
+        }
+
+        function prevQuestion() {
+            if (currentQ > 1) showQuestion(currentQ - 1);
+        }
+
+        async function nextQuestion() {
+            const key = `q${currentQ}`;
+            if (!answers[key] || answers[key].length === 0) {
+                alert('Please select at least one option');
                 return;
             }
             
-            sections[currentStep - 1].classList.add('active');
-            updateButtons();
-            updateProgress();
-        }
-
-        function updateButtons() {
-            document.getElementById('prevBtn').disabled = currentStep === 1;
-            document.getElementById('nextBtn').textContent = currentStep === totalSteps ? 'Get Recommendations 🚀' : 'Next →';
-        }
-
-        function updateProgress() {
-            const progress = (currentStep / totalSteps) * 100;
-            document.getElementById('progressBar').style.width = progress + '%';
-        }
-
-        function getCheckedValues(selector) {
-            return Array.from(document.querySelectorAll(selector))
-                .filter(cb => cb.checked)
-                .map(cb => cb.value);
-        }
-
-        async function submitForm() {
-            document.getElementById('formContent').style.display = 'none';
-            document.getElementById('loading').classList.add('active');
-
-            const formData = {
-                education_level: document.getElementById('education_level').value,
-                areas_of_interest: getCheckedValues('#interestOptions input[type="checkbox"]'),
-                technical_skills: getCheckedValues('#skillsOptions input[type="checkbox"]'),
-                preferred_activities: getCheckedValues('#activitiesOptions input[type="checkbox"]'),
-                work_style: getCheckedValues('#workStyleOptions input[type="checkbox"]'),
-                career_priorities: getCheckedValues('#prioritiesOptions input[type="checkbox"]'),
-                career_vision: document.getElementById('career_vision').value,
-                willingness_to_upskill: "Very High",
-                interest_in_coding: "High",
-                interest_in_data: "High"
-            };
-
-            console.log('Sending data:', formData);
-
             try {
-                const response = await fetch('http://localhost:8000/comprehensive-career-analysis', {
+                const res = await fetch(`${API_URL}/answer`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        question_id: currentQ,
+                        answers: answers[key],
+                        session_id: sessionId
+                    })
                 });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                
+                const data = await res.json();
+                sessionId = data.session_id;
+                
+                if (currentQ === totalQ) {
+                    document.getElementById('questionsSection').classList.remove('active');
+                    document.getElementById('chatSection').classList.add('active');
+                } else {
+                    showQuestion(currentQ + 1);
                 }
-
-                const data = await response.json();
-                console.log('Received data:', data);
-                displayResults(data);
-            } catch (error) {
-                document.getElementById('loading').classList.remove('active');
-                alert('❌ Error connecting to backend!\n\nMake sure:\n1. FastAPI is running (python main.py)\n2. Backend is at http://localhost:8000\n3. CORS is enabled\n\nError: ' + error.message);
-                console.error('Error details:', error);
-                location.reload();
+            } catch (err) {
+                alert('Error saving answer. Please try again.');
             }
         }
 
-        function displayResults(data) {
-            document.getElementById('loading').classList.remove('active');
-            document.getElementById('results').classList.add('active');
-
-            let html = '<div class="results-content">';
-
-            // Personalized Message
-            if (data.personalized_message) {
-                html += `
-                    <h2 class="section-title">💌 Your Personalized Message</h2>
-                    <div class="message-box">${data.personalized_message}</div>
-                `;
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+            
+            addMessage('user', msg);
+            input.value = '';
+            document.getElementById('analyzeBtn').disabled = true;
+            
+            try {
+                const res = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        message: msg
+                    })
+                });
+                
+                const data = await res.json();
+                setTimeout(() => {
+                    addMessage('agent', data.response);
+                    document.getElementById('analyzeBtn').disabled = false;
+                }, 500);
+            } catch (err) {
+                addMessage('agent', "I'm having trouble connecting. Click 'Get Complete Analysis' to see your results.");
+                document.getElementById('analyzeBtn').disabled = false;
             }
+        }
 
-            // Recommended Careers
-            if (data.recommended_careers && data.recommended_careers.length > 0) {
+        function handleKey(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        function addMessage(sender, text) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+            div.innerHTML = `<div class="message-content">${text}</div>`;
+            document.getElementById('chatMessages').appendChild(div);
+            document.getElementById('chatMessages').scrollTop = 999999;
+        }
+
+        async function generateAnalysis() {
+            document.getElementById('chatSection').classList.remove('active');
+            document.getElementById('analysisSection').classList.add('active');
+            
+            try {
+                const res = await fetch(`${API_URL}/analyze`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId})
+                });
+                
+                const data = await res.json();
+                renderAnalysis(data);
+            } catch (err) {
+                document.getElementById('analysisContent').innerHTML = '<p style="text-align:center;color:#666;">Error generating analysis. Please try again.</p>';
+            }
+        }
+
+        function renderAnalysis(data) {
+            let html = '';
+            
+            // Career Matches
+            if (data.career_matches?.length) {
                 html += `<h2 class="section-title">🎯 Top Career Matches</h2>`;
-                data.recommended_careers.forEach(career => {
+                data.career_matches.forEach(c => {
                     html += `
                         <div class="career-card">
-                            <div class="career-header">
-                                <h3>${career.career_name}</h3>
-                                <span class="match-badge">${career.match_percentage}% Match</span>
-                            </div>
-                            <div class="career-info"><strong>Why This Fits:</strong> ${career.reason_for_match}</div>
-                            <div class="career-info"><strong>💰 Salary Range:</strong> ${career.typical_salary_range}</div>
-                            <div class="career-info"><strong>📈 Job Outlook:</strong> ${career.job_outlook}</div>
-                            <div class="career-info"><strong>📅 Daily Work:</strong> ${career.day_to_day_work}</div>
+                            <div class="card-title">${c.title} <span class="match-badge">${c.match}% Match</span></div>
+                            <ul class="card-details">
+                                ${c.details.map(d => `<li>${d}</li>`).join('')}
+                            </ul>
                         </div>
                     `;
                 });
             }
-
-            // Skill Analysis
-            if (data.skill_analysis) {
-                html += `
-                    <h2 class="section-title">💪 Your Skills Analysis</h2>
-                    <div class="skills-section">
-                `;
-                
-                if (data.skill_analysis.existing_strengths) {
-                    html += `<h3 style="color: #10b981; margin-bottom: 10px;">✓ Existing Strengths</h3><ul>`;
-                    data.skill_analysis.existing_strengths.forEach(skill => {
-                        html += `<li style="margin: 8px 0;">${skill}</li>`;
-                    });
-                    html += `</ul>`;
-                }
-
-                if (data.skill_analysis.critical_gaps) {
-                    html += `<h3 style="color: #f59e0b; margin: 20px 0 10px 0;">⚠️ Skills to Develop</h3>`;
-                    data.skill_analysis.critical_gaps.forEach(gap => {
-                        html += `
-                            <div class="skill-gap">
-                                <h4>${gap.skill}</h4>
-                                <p><strong>Why Important:</strong> ${gap.why_important}</p>
-                                <p><strong>How to Learn:</strong> ${gap.how_to_learn}</p>
-                                <p><strong>Time Needed:</strong> ${gap.time_to_learn}</p>
-                            </div>
-                        `;
-                    });
-                }
-                html += `</div>`;
+            
+            // Missing Skills
+            if (data.missing_skills?.length) {
+                html += `<h2 class="section-title">💪 Critical Skills to Develop</h2>`;
+                data.missing_skills.forEach(s => {
+                    html += `
+                        <div class="skill-card">
+                            <div class="card-title">${s.skill}</div>
+                            <ul class="card-details">
+                                ${s.details.map(d => `<li>${d}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                });
             }
-
+            
             // Certifications
-            if (data.recommended_certifications && data.recommended_certifications.length > 0) {
-                html += `<h2 class="section-title">🎓 Recommended Certifications</h2>`;
-                data.recommended_certifications.forEach(cert => {
-                    const difficultyClass = cert.difficulty_level.toLowerCase().replace(/\s+/g, '-');
+            if (data.certifications?.length) {
+                html += `<h2 class="section-title">📜 Required Certifications</h2>`;
+                data.certifications.forEach(c => {
                     html += `
                         <div class="cert-card">
-                            <div class="cert-header">
-                                <span class="cert-name">${cert.cert_name}</span>
-                                <span class="difficulty-badge difficulty-${difficultyClass}">${cert.difficulty_level}</span>
-                            </div>
-                            <p><strong>Provider:</strong> ${cert.provider}</p>
-                            <p><strong>Why Valuable:</strong> ${cert.why_valuable}</p>
-                            <p><strong>Duration:</strong> ${cert.estimated_duration} | <strong>Cost:</strong> ${cert.cost_range}</p>
+                            <div class="card-title">${c.name}</div>
+                            <ul class="card-details">
+                                ${c.details.map(d => `<li>${d}</li>`).join('')}
+                            </ul>
                         </div>
                     `;
                 });
             }
-
-            // Portfolio Projects
-            if (data.portfolio_projects && data.portfolio_projects.length > 0) {
-                html += `<h2 class="section-title">🚀 Portfolio Projects to Build</h2>`;
-                data.portfolio_projects.forEach(project => {
+            
+            // Projects
+            if (data.projects?.length) {
+                html += `<h2 class="section-title">🚀 Portfolio Projects</h2>`;
+                data.projects.forEach(p => {
                     html += `
                         <div class="project-card">
-                            <h4>${project.project_name}</h4>
-                            <p>${project.what_to_build}</p>
-                            <p><strong>Skills Demonstrated:</strong> ${project.skills_demonstrated.join(', ')}</p>
-                            <div class="tech-tags">
-                                ${project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
-                            </div>
-                            <p><strong>Complexity:</strong> ${project.complexity} | <strong>Time:</strong> ${project.time_estimate}</p>
-                            <p><strong>💡 Wow Factor:</strong> ${project.wow_factor}</p>
+                            <div class="card-title">${p.name}</div>
+                            <ul class="card-details">
+                                ${p.details.map(d => `<li>${d}</li>`).join('')}
+                            </ul>
                         </div>
                     `;
                 });
             }
-
-            // Learning Roadmap
-            if (data.learning_roadmap) {
-                html += `<h2 class="section-title">📅 Your 3-Month Learning Roadmap</h2>`;
-                ['month_1', 'month_2', 'month_3'].forEach((month, idx) => {
-                    const monthData = data.learning_roadmap[month];
-                    if (monthData) {
-                        html += `
-                            <div class="roadmap-month">
-                                <h4>Month ${idx + 1}: ${monthData.focus}</h4>
-                                <ul class="roadmap-goals">
-                                    ${monthData.goals.map(goal => `<li>${goal}</li>`).join('')}
-                                </ul>
-                                <p style="margin-top: 10px;"><strong>Resources:</strong> ${monthData.resources.join(', ')}</p>
-                                <p><strong>Success Metric:</strong> ${monthData.success_metric}</p>
-                            </div>
-                        `;
-                    }
+            
+            // Roadmap
+            if (data.roadmap && Object.keys(data.roadmap).length) {
+                html += `<h2 class="section-title">🗺️ 6-Month Roadmap</h2>`;
+                html += `<div class="roadmap-container">`;
+                Object.entries(data.roadmap).forEach(([month, actions]) => {
+                    html += `
+                        <div class="roadmap-month">
+                            <h4>${month}</h4>
+                            <ul class="roadmap-actions">
+                                ${actions.map(a => `<li>${a}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
                 });
+                html += `</div>`;
             }
-
-            // Interview Preparation
-            if (data.interview_preparation) {
-                html += `<h2 class="section-title">🎤 Interview Preparation Guide</h2>`;
-                const prep = data.interview_preparation;
-                
-                html += `<div class="tips-list"><h3>Technical Questions to Prepare</h3><ul>`;
-                if (prep.technical_questions) {
-                    prep.technical_questions.slice(0, 5).forEach(q => {
-                        html += `<li><strong>${q.question}</strong> (${q.difficulty}) - ${q.topic_area}</li>`;
-                    });
-                }
-                html += `</ul></div>`;
-
-                if (prep.behavioral_questions) {
-                    html += `<div class="tips-list"><h3>Behavioral Questions</h3><ul>`;
-                    prep.behavioral_questions.slice(0, 5).forEach(q => {
-                        html += `<li>${q}</li>`;
-                    });
-                    html += `</ul></div>`;
-                }
-
-                if (prep.how_to_prepare) {
-                    html += `<div class="tips-list"><h3>Preparation Tips</h3><ul>`;
-                    prep.how_to_prepare.forEach(tip => {
-                        html += `<li>${tip}</li>`;
-                    });
-                    html += `</ul></div>`;
-                }
+            
+            // Job Search Strategy
+            if (data.job_search && Object.keys(data.job_search).length) {
+                html += `<h2 class="section-title">💼 Job Search Strategy</h2>`;
+                html += `<div class="job-search-box">`;
+                Object.entries(data.job_search).forEach(([key, val]) => {
+                    html += `<div class="job-search-item"><strong>${key}:</strong> ${val}</div>`;
+                });
+                html += `</div>`;
             }
-
-            // Additional Tips
-            if (data.red_flags_to_avoid) {
+            
+            // Final Advice
+            if (data.final_advice) {
                 html += `
-                    <h2 class="section-title">⚠️ Common Mistakes to Avoid</h2>
-                    <div class="tips-list">
-                        <ul>${data.red_flags_to_avoid.map(tip => `<li>${tip}</li>`).join('')}</ul>
-                    </div>
+                    <h2 class="section-title">💡 Personalized Advice</h2>
+                    <div class="final-advice-box">${data.final_advice}</div>
                 `;
             }
-
-            if (data.networking_tips) {
-                html += `
-                    <h2 class="section-title">🤝 Networking Tips</h2>
-                    <div class="tips-list">
-                        <ul>${data.networking_tips.map(tip => `<li>${tip}</li>`).join('')}</ul>
-                    </div>
-                `;
-            }
-
-            html += `
-                <div style="text-align: center; margin-top: 40px;">
-                    <button class="btn btn-next" onclick="location.reload()" style="max-width: 300px;">
-                        🔄 Start New Assessment
-                    </button>
-                </div>
+            
+            html += `<div style="text-align:center;margin-top:30px;padding:20px;background:#f0f4ff;border-radius:8px;">
+                ✅ This analysis is personalized based on your answers and conversation
             </div>`;
-
-            document.getElementById('resultsContent').innerHTML = html;
+            
+            document.getElementById('analysisContent').innerHTML = html;
         }
 
-        // Initialize
-        updateProgress();
+        window.onload = init;
     </script>
 </body>
 </html>
