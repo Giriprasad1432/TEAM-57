@@ -242,7 +242,8 @@ Rules:
             self.chat_histories[sid].append({"role": "assistant", "content": response})
             
             return {"success": True, "response": response}
-        except:
+        except Exception as e:
+            print(f"Chat error: {e}")
             return {"success": False, "response": "I'd suggest focusing on practical projects first. What specific area interests you most?"}
     
     async def generate_analysis(self, sid: str, profile: Dict, chat_history: List) -> Dict:

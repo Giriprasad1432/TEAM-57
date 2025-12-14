@@ -27,7 +27,6 @@
             overflow: hidden;
         }
 
-        /* Split Layout for Analysis */
         .split-container {
             max-width: 1600px;
             margin: 0 auto;
@@ -102,7 +101,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Questions */
         .question-title {
             font-size: 20px;
             color: #333;
@@ -181,7 +179,81 @@
             display: block;
         }
 
-        /* Chat */
+        .custom-input-box {
+            background: #fff8e1;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .custom-input-label {
+            display: block;
+            color: #f57c00;
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .custom-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-color: #f57c00;
+        }
+
+        .regeneration-banner {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            color: white;
+            padding: 15px 20px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideDown 0.4s ease;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+
+        .regeneration-banner.show {
+            display: flex;
+        }
+
+        .regeneration-text {
+            flex: 1;
+            font-weight: 600;
+        }
+
+        .regen-btn {
+            background: white;
+            color: #f57c00;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .regen-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
         .chat-section {
             display: flex;
             flex-direction: column;
@@ -251,7 +323,6 @@
             border-color: #667eea;
         }
 
-        /* Sidebar Chat (for Analysis page) */
         .sidebar-chat-header {
             padding: 20px;
             background: #667eea;
@@ -291,7 +362,6 @@
             border-color: #667eea;
         }
 
-        /* Buttons */
         .btn {
             background: #667eea;
             color: white;
@@ -331,13 +401,11 @@
             font-size: 14px;
         }
 
-        /* Analysis */
         .analysis-header {
             background: #667eea;
             color: white;
             padding: 25px;
             text-align: center;
-            border-radius: 12px 12px 0 0;
         }
 
         .analysis-content {
@@ -529,20 +597,21 @@
         </div>
 
         <div class="content">
-            <!-- Questions Section -->
             <div id="questionsSection" class="section active">
                 <div class="question-title">
                     <span class="question-number" id="qNumber">1</span>
                     <span id="questionText"></span>
                 </div>
-                <div class="options-grid" id="optionsGrid"></div>
+                <div id="optionsContainer">
+                    <div class="options-grid" id="optionsGrid"></div>
+                    <div id="customInputContainer"></div>
+                </div>
                 <div class="btn-container">
                     <button class="btn btn-prev" id="prevBtn" onclick="prevQuestion()" disabled>Previous</button>
                     <button class="btn" id="nextBtn" onclick="nextQuestion()">Next Question</button>
                 </div>
             </div>
 
-            <!-- Chat Section -->
             <div id="chatSection" class="section">
                 <div class="chat-section">
                     <div class="chat-header">
@@ -566,10 +635,14 @@
         </div>
     </div>
 
-    <!-- Split Layout for Analysis -->
     <div id="splitContainer" class="split-container" style="display: none;">
-        <!-- Main Analysis Content -->
         <div class="main-content">
+            <div class="regeneration-banner" id="regenerationBanner">
+                <div class="regeneration-text">
+                    ⚡ New information detected! Click to regenerate your analysis with updated insights.
+                </div>
+                <button class="regen-btn" onclick="regenerateAnalysis()">Regenerate Now</button>
+            </div>
             <div class="analysis-header">
                 <h2>📈 Your Personalized Career Analysis</h2>
                 <p>Complete roadmap based on your profile and conversation</p>
@@ -582,7 +655,6 @@
             </div>
         </div>
 
-        <!-- Chat Sidebar -->
         <div class="chat-sidebar">
             <div class="sidebar-chat-header">
                 <h3>💬 Career Coach Alex</h3>
@@ -605,6 +677,7 @@
         let currentQ = 1;
         let totalQ = 0;
         let answers = {};
+        let customAnswer = '';
         let sessionId = null;
         let questions = [];
 
@@ -647,6 +720,10 @@
                 `;
                 grid.appendChild(card);
             });
+
+            // Show/hide custom input
+            const hasOther = selected.some(s => s === "Other (Specify)");
+            updateCustomInput(hasOther);
         }
 
         function toggleOption(opt, isMultiple, max) {
@@ -656,6 +733,9 @@
             if (isMultiple) {
                 if (answers[key].includes(opt)) {
                     answers[key] = answers[key].filter(x => x !== opt);
+                    if (opt === "Other (Specify)") {
+                        customAnswer = '';
+                    }
                 } else if (answers[key].length < max) {
                     answers[key].push(opt);
                 } else {
@@ -664,19 +744,51 @@
                 }
             } else {
                 answers[key] = [opt];
+                if (opt !== "Other (Specify)") {
+                    customAnswer = '';
+                }
             }
             
             showQuestion(currentQ);
         }
 
+        function updateCustomInput(show) {
+            const container = document.getElementById('customInputContainer');
+            if (show) {
+                container.innerHTML = `
+                    <div class="custom-input-box">
+                        <label class="custom-input-label">📝 Please specify your answer:</label>
+                        <input type="text" 
+                               class="custom-input" 
+                               id="customAnswerInput"
+                               placeholder="Enter your custom answer here..." 
+                               value="${customAnswer}"
+                               oninput="customAnswer = this.value">
+                    </div>
+                `;
+            } else {
+                container.innerHTML = '';
+            }
+        }
+
         function prevQuestion() {
-            if (currentQ > 1) showQuestion(currentQ - 1);
+            if (currentQ > 1) {
+                customAnswer = '';
+                showQuestion(currentQ - 1);
+            }
         }
 
         async function nextQuestion() {
             const key = `q${currentQ}`;
             if (!answers[key] || answers[key].length === 0) {
                 alert('Please select at least one option');
+                return;
+            }
+            
+            // Check if "Other" is selected and validate custom input
+            const hasOther = answers[key].includes("Other (Specify)");
+            if (hasOther && !customAnswer.trim()) {
+                alert('Please specify your custom answer');
                 return;
             }
             
@@ -687,7 +799,8 @@
                     body: JSON.stringify({
                         question_id: currentQ,
                         answers: answers[key],
-                        session_id: sessionId
+                        session_id: sessionId,
+                        custom_answer: hasOther ? customAnswer.trim() : null
                     })
                 });
                 
@@ -698,6 +811,7 @@
                     document.getElementById('questionsSection').classList.remove('active');
                     document.getElementById('chatSection').classList.add('active');
                 } else {
+                    customAnswer = '';
                     showQuestion(currentQ + 1);
                 }
             } catch (err) {
@@ -728,6 +842,11 @@
                 setTimeout(() => {
                     addMessage('agent', data.response, 'chatMessages');
                     document.getElementById('analyzeBtn').disabled = false;
+                    
+                    // Show regeneration banner if needed
+                    if (data.needs_regeneration) {
+                        document.getElementById('regenerationBanner').classList.add('show');
+                    }
                 }, 500);
             } catch (err) {
                 addMessage('agent', "I'm having trouble connecting. Click 'Get Complete Analysis' to see your results.", 'chatMessages');
@@ -756,6 +875,10 @@
                 const data = await res.json();
                 setTimeout(() => {
                     addMessage('agent', data.response, 'sidebarChatMessages');
+                    
+                    if (data.needs_regeneration) {
+                        document.getElementById('regenerationBanner').classList.add('show');
+                    }
                 }, 500);
             } catch (err) {
                 addMessage('agent', "Sorry, I'm having trouble responding right now.", 'sidebarChatMessages');
@@ -780,13 +903,18 @@
         }
 
         async function generateAnalysis() {
-            // Hide main container and show split layout
             document.getElementById('mainContainer').style.display = 'none';
             document.getElementById('splitContainer').style.display = 'flex';
             
-            // Copy chat history to sidebar
             const mainChat = document.getElementById('chatMessages').innerHTML;
             document.getElementById('sidebarChatMessages').innerHTML = mainChat;
+            
+            document.getElementById('analysisContent').innerHTML = `
+                <div style="text-align: center; padding: 50px;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 20px; color: #666;">Generating comprehensive analysis...</p>
+                </div>
+            `;
             
             try {
                 const res = await fetch(`${API_URL}/analyze`, {
@@ -797,15 +925,51 @@
                 
                 const data = await res.json();
                 renderAnalysis(data);
+                document.getElementById('regenerationBanner').classList.remove('show');
+                
+                // Add success message to sidebar chat
+                addMessage('agent', '✅ Your comprehensive career analysis is ready! Feel free to ask questions about any section.', 'sidebarChatMessages');
             } catch (err) {
-                document.getElementById('analysisContent').innerHTML = '<p style="text-align:center;color:#666;">Error generating analysis. Please try again.</p>';
+                document.getElementById('analysisContent').innerHTML = `
+                    <div style="text-align: center; padding: 50px;">
+                        <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                        <h3 style="color: #666; margin-bottom: 15px;">Temporary Service Issue</h3>
+                        <p style="color: #888; margin-bottom: 20px;">We're having trouble generating your analysis.</p>
+                        <button class="btn" onclick="generateAnalysis()">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        async function regenerateAnalysis() {
+            document.getElementById('analysisContent').innerHTML = `
+                <div style="text-align: center; padding: 50px;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 20px; color: #666;">Regenerating analysis with new insights...</p>
+                </div>
+            `;
+            
+            document.getElementById('regenerationBanner').classList.remove('show');
+            
+            try {
+                const res = await fetch(`${API_URL}/analyze`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({session_id: sessionId})
+                });
+                
+                const data = await res.json();
+                renderAnalysis(data);
+                
+                addMessage('agent', '✅ Analysis regenerated with your latest conversation!', 'sidebarChatMessages');
+            } catch (err) {
+                document.getElementById('analysisContent').innerHTML = '<p style="text-align:center;color:#666;">Error regenerating analysis. Please try again.</p>';
             }
         }
 
         function renderAnalysis(data) {
             let html = '';
             
-            // Career Matches
             if (data.career_matches?.length) {
                 html += `<h2 class="section-title">🎯 Top Career Matches</h2>`;
                 data.career_matches.forEach(c => {
@@ -820,9 +984,8 @@
                 });
             }
             
-            // Missing Skills
             if (data.missing_skills?.length) {
-                html += `<h2 class="section-title">💪 Critical Skills to Develop</h2>`;
+                html += `<h2 class="section-title">💪 Missing Skills (Priority Order)</h2>`;
                 data.missing_skills.forEach(s => {
                     html += `
                         <div class="skill-card">
@@ -835,69 +998,83 @@
                 });
             }
             
-            // Certifications
             if (data.certifications?.length) {
                 html += `<h2 class="section-title">📜 Required Certifications</h2>`;
-                data.certifications.forEach(c => {
+                data.certifications.forEach(cert => {
                     html += `
                         <div class="cert-card">
-                            <div class="card-title">${c.name}</div>
+                            <div class="card-title">${cert.name}</div>
                             <ul class="card-details">
-                                ${c.details.map(d => `<li>${d}</li>`).join('')}
+                                ${cert.details.map(d => `<li>${d}</li>`).join('')}
                             </ul>
                         </div>
                     `;
                 });
             }
             
-            // Projects
             if (data.projects?.length) {
-                html += `<h2 class="section-title">🚀 Portfolio Projects</h2>`;
-                data.projects.forEach(p => {
+                html += `<h2 class="section-title">🚀 Portfolio Projects (Career-Specific)</h2>`;
+                data.projects.forEach(proj => {
                     html += `
                         <div class="project-card">
-                            <div class="card-title">${p.name}</div>
+                            <div class="card-title">${proj.name}</div>
                             <ul class="card-details">
-                                ${p.details.map(d => `<li>${d}</li>`).join('')}
+                                ${proj.details.map(d => `<li>${d}</li>`).join('')}
                             </ul>
                         </div>
                     `;
                 });
             }
             
-            // Roadmap
-            if (data.roadmap && Object.keys(data.roadmap).length) {
+            if (data.roadmap && Object.keys(data.roadmap).length > 0) {
                 html += `<h2 class="section-title">🗺️ 6-Month Roadmap</h2>`;
                 html += `<div class="roadmap-container">`;
-                Object.entries(data.roadmap).forEach(([month, actions]) => {
-                    html += `
-                        <div class="roadmap-month">
-                            <h4>${month}</h4>
-                            <ul class="roadmap-actions">
-                                ${actions.map(a => `<li>${a}</li>`).join('')}
-                            </ul>
-                        </div>
-                    `;
+                
+                // Sort months in order
+                const months = Object.keys(data.roadmap);
+                months.sort((a, b) => {
+                    const aNum = parseInt(a.replace('Month ', ''));
+                    const bNum = parseInt(b.replace('Month ', ''));
+                    return aNum - bNum;
                 });
+                
+                months.forEach(month => {
+                    const actions = data.roadmap[month];
+                    if (actions && actions.length > 0) {
+                        html += `
+                            <div class="roadmap-month">
+                                <h4>${month}</h4>
+                                <ul class="roadmap-actions">
+                                    ${actions.map(action => `<li>${action}</li>`).join('')}
+                                </ul>
+                            </div>
+                        `;
+                    }
+                });
+                
                 html += `</div>`;
             }
             
-            // Job Search Strategy
-            if (data.job_search && Object.keys(data.job_search).length) {
+            if (data.job_search && Object.keys(data.job_search).length > 0) {
                 html += `<h2 class="section-title">💼 Job Search Strategy</h2>`;
                 html += `<div class="job-search-box">`;
-                Object.entries(data.job_search).forEach(([key, val]) => {
-                    html += `<div class="job-search-item"><strong>${key}:</strong> ${val}</div>`;
-                });
+                
+                for (const [key, value] of Object.entries(data.job_search)) {
+                    if (value && value.trim() !== '') {
+                        html += `
+                            <div class="job-search-item">
+                                <strong>${key}:</strong> ${value}
+                            </div>
+                        `;
+                    }
+                }
+                
                 html += `</div>`;
             }
             
-            // Final Advice
             if (data.final_advice) {
-                html += `
-                    <h2 class="section-title">💡 Personalized Advice</h2>
-                    <div class="final-advice-box">${data.final_advice}</div>
-                `;
+                html += `<h2 class="section-title">💡 Personalized Advice</h2>`;
+                html += `<div class="final-advice-box">${data.final_advice}</div>`;
             }
             
             html += `<div style="text-align:center;margin-top:30px;padding:20px;background:#f0f4ff;border-radius:8px;">
