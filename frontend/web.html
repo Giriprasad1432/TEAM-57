@@ -27,6 +27,36 @@
             overflow: hidden;
         }
 
+        /* Split Layout for Analysis */
+        .split-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .main-content {
+            flex: 1;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .chat-sidebar {
+            width: 400px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+        }
+
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -221,6 +251,46 @@
             border-color: #667eea;
         }
 
+        /* Sidebar Chat (for Analysis page) */
+        .sidebar-chat-header {
+            padding: 20px;
+            background: #667eea;
+            color: white;
+            text-align: center;
+        }
+
+        .sidebar-chat-header h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f9fafb;
+        }
+
+        .sidebar-chat-input-container {
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .sidebar-chat-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-chat-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
         /* Buttons */
         .btn {
             background: #667eea;
@@ -254,6 +324,11 @@
         .btn-prev {
             background: #f0f4ff;
             color: #667eea;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
         }
 
         /* Analysis */
@@ -415,6 +490,18 @@
             100% { transform: rotate(360deg); }
         }
 
+        @media (max-width: 1400px) {
+            .split-container {
+                flex-direction: column;
+            }
+
+            .chat-sidebar {
+                width: 100%;
+                position: relative;
+                max-height: 500px;
+            }
+        }
+
         @media (max-width: 768px) {
             .options-grid {
                 grid-template-columns: 1fr;
@@ -432,7 +519,7 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div id="mainContainer" class="container">
         <div class="header">
             <h1>🎯 AI Career Guidance</h1>
             <p>Comprehensive personalized analysis with roadmap & strategy</p>
@@ -476,19 +563,39 @@
                     <button class="btn" onclick="generateAnalysis()" id="analyzeBtn">📊 Get Complete Analysis</button>
                 </div>
             </div>
+        </div>
+    </div>
 
-            <!-- Analysis Section -->
-            <div id="analysisSection" class="section">
-                <div class="analysis-header">
-                    <h2>📈 Your Personalized Career Analysis</h2>
-                    <p>Complete roadmap based on your profile and conversation</p>
+    <!-- Split Layout for Analysis -->
+    <div id="splitContainer" class="split-container" style="display: none;">
+        <!-- Main Analysis Content -->
+        <div class="main-content">
+            <div class="analysis-header">
+                <h2>📈 Your Personalized Career Analysis</h2>
+                <p>Complete roadmap based on your profile and conversation</p>
+            </div>
+            <div class="analysis-content" id="analysisContent">
+                <div style="text-align: center; padding: 50px;">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 20px; color: #666;">Generating comprehensive analysis...</p>
                 </div>
-                <div class="analysis-content" id="analysisContent">
-                    <div style="text-align: center; padding: 50px;">
-                        <div class="spinner"></div>
-                        <p style="margin-top: 20px; color: #666;">Generating comprehensive analysis...</p>
-                    </div>
+            </div>
+        </div>
+
+        <!-- Chat Sidebar -->
+        <div class="chat-sidebar">
+            <div class="sidebar-chat-header">
+                <h3>💬 Career Coach Alex</h3>
+                <p style="font-size: 13px; margin-top: 5px;">Ask questions while viewing analysis</p>
+            </div>
+            <div class="sidebar-chat-messages" id="sidebarChatMessages">
+                <div class="message agent">
+                    <div class="message-content">I'm here to help clarify anything in your analysis!</div>
                 </div>
+            </div>
+            <div class="sidebar-chat-input-container">
+                <input type="text" class="sidebar-chat-input" id="sidebarChatInput" placeholder="Ask about your analysis..." onkeypress="handleSidebarKey(event)">
+                <button class="btn btn-small" style="width: 100%;" onclick="sendSidebarMessage()">Send Message</button>
             </div>
         </div>
     </div>
@@ -603,7 +710,7 @@
             const msg = input.value.trim();
             if (!msg) return;
             
-            addMessage('user', msg);
+            addMessage('user', msg, 'chatMessages');
             input.value = '';
             document.getElementById('analyzeBtn').disabled = true;
             
@@ -619,12 +726,39 @@
                 
                 const data = await res.json();
                 setTimeout(() => {
-                    addMessage('agent', data.response);
+                    addMessage('agent', data.response, 'chatMessages');
                     document.getElementById('analyzeBtn').disabled = false;
                 }, 500);
             } catch (err) {
-                addMessage('agent', "I'm having trouble connecting. Click 'Get Complete Analysis' to see your results.");
+                addMessage('agent', "I'm having trouble connecting. Click 'Get Complete Analysis' to see your results.", 'chatMessages');
                 document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        async function sendSidebarMessage() {
+            const input = document.getElementById('sidebarChatInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+            
+            addMessage('user', msg, 'sidebarChatMessages');
+            input.value = '';
+            
+            try {
+                const res = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        message: msg
+                    })
+                });
+                
+                const data = await res.json();
+                setTimeout(() => {
+                    addMessage('agent', data.response, 'sidebarChatMessages');
+                }, 500);
+            } catch (err) {
+                addMessage('agent', "Sorry, I'm having trouble responding right now.", 'sidebarChatMessages');
             }
         }
 
@@ -632,17 +766,27 @@
             if (e.key === 'Enter') sendMessage();
         }
 
-        function addMessage(sender, text) {
+        function handleSidebarKey(e) {
+            if (e.key === 'Enter') sendSidebarMessage();
+        }
+
+        function addMessage(sender, text, containerId) {
             const div = document.createElement('div');
             div.className = `message ${sender}`;
             div.innerHTML = `<div class="message-content">${text}</div>`;
-            document.getElementById('chatMessages').appendChild(div);
-            document.getElementById('chatMessages').scrollTop = 999999;
+            const container = document.getElementById(containerId);
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
         }
 
         async function generateAnalysis() {
-            document.getElementById('chatSection').classList.remove('active');
-            document.getElementById('analysisSection').classList.add('active');
+            // Hide main container and show split layout
+            document.getElementById('mainContainer').style.display = 'none';
+            document.getElementById('splitContainer').style.display = 'flex';
+            
+            // Copy chat history to sidebar
+            const mainChat = document.getElementById('chatMessages').innerHTML;
+            document.getElementById('sidebarChatMessages').innerHTML = mainChat;
             
             try {
                 const res = await fetch(`${API_URL}/analyze`, {

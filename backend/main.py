@@ -11,7 +11,7 @@ from datetime import datetime
 load_dotenv()
 client = Groq(api_key=os.getenv("API_KEY"))
 
-app = FastAPI(title="AI Career Guidance System", version="5.0.0")
+app = FastAPI(title="AI Career Guidance System", version="5.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,6 +25,7 @@ class QuestionAnswer(BaseModel):
     question_id: int
     answers: List[str]
     session_id: Optional[str] = None
+    custom_answer: Optional[str] = None
 
 class ChatMessage(BaseModel):
     session_id: str
@@ -41,7 +42,8 @@ QUESTIONS = [
             "Master's Degree (M.Tech/MBA/MSc)",
             "Doctorate (PhD)",
             "Diploma/Certification",
-            "Currently Studying"
+            "Currently Studying",
+            "Other (Specify)"
         ]
     },
     {
@@ -63,7 +65,8 @@ QUESTIONS = [
             "Healthcare Technology",
             "Education Technology",
             "Entrepreneurship",
-            "Research & Development"
+            "Research & Development",
+            "Other (Specify)"
         ],
         "max_selections": 3
     },
@@ -86,7 +89,8 @@ QUESTIONS = [
             "Mobile Development",
             "UI/UX Tools",
             "DevOps Tools",
-            "No technical skills yet"
+            "No technical skills yet",
+            "Other (Specify)"
         ]
     },
     {
@@ -99,7 +103,8 @@ QUESTIONS = [
             "1-3 years (Junior Level)",
             "3-5 years (Mid Level)",
             "5+ years (Senior Level)",
-            "Career Changer from different field"
+            "Career Changer from different field",
+            "Other (Specify)"
         ]
     },
     {
@@ -114,7 +119,8 @@ QUESTIONS = [
             "Build startup/own business",
             "Move to managerial role",
             "Work internationally",
-            "Achieve work-life balance"
+            "Achieve work-life balance",
+            "Other (Specify)"
         ]
     },
     {
@@ -126,7 +132,8 @@ QUESTIONS = [
             "5-10 hours",
             "10-20 hours",
             "20-30 hours",
-            "30+ hours (Full-time learning)"
+            "30+ hours (Full-time learning)",
+            "Other (Specify)"
         ]
     },
     {
@@ -139,7 +146,8 @@ QUESTIONS = [
             "Books & documentation",
             "Hands-on projects",
             "Bootcamps/Classroom training",
-            "Mentorship/1-on-1 guidance"
+            "Mentorship/1-on-1 guidance",
+            "Other (Specify)"
         ]
     },
     {
@@ -156,7 +164,8 @@ QUESTIONS = [
             "Manufacturing",
             "Government/Public Sector",
             "Startups",
-            "Consulting"
+            "Consulting",
+            "Other (Specify)"
         ]
     },
     {
@@ -170,7 +179,8 @@ QUESTIONS = [
             "₹10-15 LPA",
             "₹15-20 LPA",
             "₹20+ LPA",
-            "Looking for experience, not salary"
+            "Looking for experience, not salary",
+            "Other (Specify)"
         ]
     },
     {
@@ -182,7 +192,8 @@ QUESTIONS = [
             "Yes, specific cities only",
             "No, remote only",
             "Open to hybrid (part office/part remote)",
-            "Considering international relocation"
+            "Considering international relocation",
+            "Other (Specify)"
         ]
     }
 ]
@@ -343,14 +354,12 @@ Make EVERYTHING specific to THIS user - reference their actual answers."""
         
         lines = text.split('\n')
         current_section = None
-        current_item = None
         
         for i, line in enumerate(lines):
             line = line.strip()
             if not line:
                 continue
             
-            # Detect sections
             if "CAREER MATCHES" in line:
                 current_section = "careers"
             elif "MISSING SKILLS" in line:
@@ -372,7 +381,6 @@ Make EVERYTHING specific to THIS user - reference their actual answers."""
                 result["final_advice"] = ' '.join(advice_lines)
                 continue
             
-            # Parse content
             if current_section == "careers":
                 if line.startswith(('-', '1.', '2.', '3.')):
                     if '|' in line and '%' in line:
@@ -451,7 +459,6 @@ Make EVERYTHING specific to THIS user - reference their actual answers."""
                     value = line.split(':', 1)[1].strip()
                     result["job_search"][key] = value
         
-        # Fallback content
         if not result["career_matches"]:
             result["career_matches"] = self._get_default_careers(profile)
         if not result["missing_skills"]:
@@ -533,7 +540,7 @@ Make EVERYTHING specific to THIS user - reference their actual answers."""
         }
     
     def _get_default_advice(self, profile):
-        return f"Based on your {profile.get('education')} background and interest in {', '.join(profile.get('interests', ['technology'])[:2])}, focus on building practical projects that solve real problems. Don't wait for perfection - start applying and learning simultaneously. The job search itself is a learning experience."
+        return f"Based on your {profile.get('education')} background and interest in {', '.join(profile.get('interests', ['technology'])[:2])}, focus on building practical projects that solve real problems. Don't wait for perfection - start applying and learning simultaneously."
     
     def _fallback_analysis(self, profile):
         return {
@@ -556,7 +563,7 @@ user_sessions = {}
 
 @app.get("/")
 async def root():
-    return {"status": "active", "version": "5.0.0"}
+    return {"status": "active", "version": "5.1.0"}
 
 @app.get("/questions")
 async def get_questions():
@@ -569,9 +576,17 @@ async def submit_answer(ans: QuestionAnswer):
     if sid not in user_sessions:
         user_sessions[sid] = {"answers": {}, "created": datetime.now().isoformat()}
     
+    # Handle custom answer for "Other" option
+    final_answers = []
+    for answer in ans.answers:
+        if answer == "Other (Specify)" and ans.custom_answer:
+            final_answers.append(f"Other: {ans.custom_answer}")
+        else:
+            final_answers.append(answer)
+    
     user_sessions[sid]["answers"][f"q{ans.question_id}"] = {
         "question": QUESTIONS[ans.question_id-1]["question"],
-        "answers": ans.answers
+        "answers": final_answers
     }
     
     return {"success": True, "session_id": sid, "progress": f"{len(user_sessions[sid]['answers'])}/{len(QUESTIONS)}"}
@@ -597,7 +612,18 @@ async def chat(msg: ChatMessage):
     }
     
     result = await agent.chat(msg.session_id, msg.message, profile)
-    return {"success": result["success"], "response": result["response"]}
+    
+    # Mark that analysis needs regeneration if it exists
+    needs_regen = False
+    if "analysis" in user_sessions[msg.session_id]:
+        user_sessions[msg.session_id]["needs_regeneration"] = True
+        needs_regen = True
+    
+    return {
+        "success": result["success"], 
+        "response": result["response"],
+        "needs_regeneration": needs_regen
+    }
 
 @app.post("/analyze")
 async def analyze(data: dict):
@@ -624,9 +650,10 @@ async def analyze(data: dict):
     analysis = await agent.generate_analysis(session_id, profile, chat_history)
     
     user_sessions[session_id]["analysis"] = analysis
+    user_sessions[session_id]["needs_regeneration"] = False
     return analysis
 
 if __name__ == "__main__":
-    print("🎯 AI Career Guidance - Personalized Analysis System")
+    print("🎯 AI Career Guidance - Personalized Analysis System v5.1")
     print("📍 http://localhost:8000")
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
