@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Career Guidance - Personalized Analysis</title>
+    <title>AI Career Guidance - Dynamic Personalized Path</title>
     <style>
         * {
             margin: 0;
@@ -68,18 +68,15 @@
             margin-bottom: 10px;
         }
 
-        .progress-bar {
-            background: rgba(255,255,255,0.2);
-            height: 6px;
-            margin-top: 20px;
-            border-radius: 3px;
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: white;
-            width: 0%;
-            transition: width 0.3s ease;
+        .progress-info {
+            margin-top: 15px;
+            font-size: 14px;
+            opacity: 0.95;
         }
 
         .content {
@@ -106,18 +103,14 @@
             color: #333;
             margin-bottom: 25px;
             font-weight: 600;
+            line-height: 1.6;
         }
 
-        .question-number {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 36px;
-            margin-right: 10px;
+        .question-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
         }
 
         .options-grid {
@@ -590,25 +583,23 @@
     <div id="mainContainer" class="container">
         <div class="header">
             <h1>🎯 AI Career Guidance</h1>
-            <p>Comprehensive personalized analysis with roadmap & strategy</p>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
+            <p>Personalized career path based on YOUR unique journey</p>
+            <div class="progress-info" id="progressInfo">
+                Starting your personalized journey...
             </div>
         </div>
 
         <div class="content">
             <div id="questionsSection" class="section active">
-                <div class="question-title">
-                    <span class="question-number" id="qNumber">1</span>
-                    <span id="questionText"></span>
-                </div>
+                <div class="question-title" id="questionText"></div>
+                <div id="questionSubtitle" class="question-subtitle"></div>
                 <div id="optionsContainer">
                     <div class="options-grid" id="optionsGrid"></div>
                     <div id="customInputContainer"></div>
                 </div>
                 <div class="btn-container">
-                    <button class="btn btn-prev" id="prevBtn" onclick="prevQuestion()" disabled>Previous</button>
-                    <button class="btn" id="nextBtn" onclick="nextQuestion()">Next Question</button>
+                    <button class="btn btn-prev" id="prevBtn" onclick="goBack()" style="display:none;">← Previous</button>
+                    <button class="btn" id="nextBtn" onclick="submitAnswer()">Next Question →</button>
                 </div>
             </div>
 
@@ -645,7 +636,7 @@
             </div>
             <div class="analysis-header">
                 <h2>📈 Your Personalized Career Analysis</h2>
-                <p>Complete roadmap based on your profile and conversation</p>
+                <p>Complete roadmap based on your unique profile</p>
             </div>
             <div class="analysis-content" id="analysisContent">
                 <div style="text-align: center; padding: 50px;">
@@ -674,82 +665,106 @@
 
     <script>
         const API_URL = 'http://localhost:8000';
-        let currentQ = 1;
-        let totalQ = 0;
-        let answers = {};
+        let currentQuestion = null;
+        let selectedAnswers = [];
         let customAnswer = '';
         let sessionId = null;
-        let questions = [];
+        let questionHistory = [];
 
         async function init() {
             try {
-                const res = await fetch(`${API_URL}/questions`);
+                const res = await fetch(`${API_URL}/start`);
                 const data = await res.json();
-                questions = data.questions;
-                totalQ = data.total;
-                showQuestion(1);
+                showQuestion(data.question);
             } catch (err) {
-                alert('Error loading questions. Please refresh.');
+                alert('Error loading questionnaire. Please refresh.');
             }
         }
 
-        function showQuestion(num) {
-            currentQ = num;
-            const q = questions[num - 1];
+        function showQuestion(question) {
+            currentQuestion = question;
             
-            document.getElementById('qNumber').textContent = num;
-            document.getElementById('questionText').textContent = q.question;
-            document.getElementById('progressFill').style.width = `${((num - 1) / totalQ) * 100}%`;
-            document.getElementById('prevBtn').disabled = num === 1;
-            document.getElementById('nextBtn').textContent = num === totalQ ? 'Start Chat →' : 'Next Question';
+            document.getElementById('questionText').textContent = question.question;
             
+            // Show subtitle for multiple selection questions
+            const subtitle = document.getElementById('questionSubtitle');
+            if (question.type === 'multiple' && question.max_selections) {
+                subtitle.textContent = `(Select up to ${question.max_selections} options)`;
+                subtitle.style.display = 'block';
+            } else if (question.type === 'multiple') {
+                subtitle.textContent = '(Select all that apply)';
+                subtitle.style.display = 'block';
+            } else {
+                subtitle.style.display = 'none';
+            }
+            
+            // Update progress
+            document.getElementById('progressInfo').textContent = 
+                `Question: ${question.question.substring(0, 50)}...`;
+            
+            // Show/hide back button
+            document.getElementById('prevBtn').style.display = 
+                questionHistory.length > 0 ? 'inline-block' : 'none';
+            
+            // Reset selections
+            selectedAnswers = [];
+            customAnswer = '';
+            
+            // Display options
             const grid = document.getElementById('optionsGrid');
             grid.innerHTML = '';
             
-            const selected = answers[`q${num}`] || [];
-            const isMultiple = q.type === 'multiple';
-            const maxSel = q.max_selections || 999;
-            
-            q.options.forEach(opt => {
+            question.options.forEach(opt => {
                 const card = document.createElement('div');
-                card.className = `option-card ${selected.includes(opt) ? 'selected' : ''}`;
-                card.onclick = () => toggleOption(opt, isMultiple, maxSel);
+                card.className = 'option-card';
+                card.onclick = () => toggleOption(opt, question.type, question.max_selections);
                 card.innerHTML = `
                     <span class="label-text">${opt}</span>
                     <span class="checkmark"></span>
                 `;
                 grid.appendChild(card);
             });
-
-            // Show/hide custom input
-            const hasOther = selected.some(s => s === "Other (Specify)");
-            updateCustomInput(hasOther);
+            
+            document.getElementById('customInputContainer').innerHTML = '';
         }
 
-        function toggleOption(opt, isMultiple, max) {
-            const key = `q${currentQ}`;
-            if (!answers[key]) answers[key] = [];
-            
-            if (isMultiple) {
-                if (answers[key].includes(opt)) {
-                    answers[key] = answers[key].filter(x => x !== opt);
+        function toggleOption(opt, type, maxSel) {
+            if (type === 'single') {
+                selectedAnswers = [opt];
+                updateSelectionUI();
+            } else {
+                // Multiple selection
+                const idx = selectedAnswers.indexOf(opt);
+                if (idx > -1) {
+                    selectedAnswers.splice(idx, 1);
                     if (opt === "Other (Specify)") {
                         customAnswer = '';
                     }
-                } else if (answers[key].length < max) {
-                    answers[key].push(opt);
                 } else {
-                    alert(`Maximum ${max} selections allowed`);
-                    return;
+                    if (maxSel && selectedAnswers.length >= maxSel) {
+                        alert(`Maximum ${maxSel} selections allowed`);
+                        return;
+                    }
+                    selectedAnswers.push(opt);
                 }
-            } else {
-                answers[key] = [opt];
-                if (opt !== "Other (Specify)") {
-                    customAnswer = '';
-                }
+                updateSelectionUI();
             }
             
-            showQuestion(currentQ);
+            // Show custom input if "Other" is selected
+            const hasOther = selectedAnswers.includes("Other (Specify)");
+            updateCustomInput(hasOther);
+        }
+
+        function updateSelectionUI() {
+            const cards = document.querySelectorAll('.option-card');
+            cards.forEach(card => {
+                const text = card.querySelector('.label-text').textContent;
+                if (selectedAnswers.includes(text)) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
         }
 
         function updateCustomInput(show) {
@@ -771,22 +786,13 @@
             }
         }
 
-        function prevQuestion() {
-            if (currentQ > 1) {
-                customAnswer = '';
-                showQuestion(currentQ - 1);
-            }
-        }
-
-        async function nextQuestion() {
-            const key = `q${currentQ}`;
-            if (!answers[key] || answers[key].length === 0) {
+        async function submitAnswer() {
+            if (selectedAnswers.length === 0) {
                 alert('Please select at least one option');
                 return;
             }
             
-            // Check if "Other" is selected and validate custom input
-            const hasOther = answers[key].includes("Other (Specify)");
+            const hasOther = selectedAnswers.includes("Other (Specify)");
             if (hasOther && !customAnswer.trim()) {
                 alert('Please specify your custom answer');
                 return;
@@ -797,8 +803,8 @@
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        question_id: currentQ,
-                        answers: answers[key],
+                        question_id: currentQuestion.id,
+                        answers: selectedAnswers,
                         session_id: sessionId,
                         custom_answer: hasOther ? customAnswer.trim() : null
                     })
@@ -807,16 +813,39 @@
                 const data = await res.json();
                 sessionId = data.session_id;
                 
-                if (currentQ === totalQ) {
+                if (data.completed) {
+                    // Move to chat section
                     document.getElementById('questionsSection').classList.remove('active');
                     document.getElementById('chatSection').classList.add('active');
                 } else {
-                    customAnswer = '';
-                    showQuestion(currentQ + 1);
+                    // Save to history and show next question
+                    questionHistory.push({
+                        question: currentQuestion,
+                        answers: [...selectedAnswers],
+                        customAnswer: customAnswer
+                    });
+                    showQuestion(data.next_question);
                 }
             } catch (err) {
-                alert('Error saving answer. Please try again.');
+                alert('Error submitting answer. Please try again.');
             }
+        }
+
+        function goBack() {
+            if (questionHistory.length === 0) return;
+            
+            const prev = questionHistory.pop();
+            selectedAnswers = prev.answers;
+            customAnswer = prev.customAnswer;
+            showQuestion(prev.question);
+            
+            // Restore selections
+            setTimeout(() => {
+                updateSelectionUI();
+                if (selectedAnswers.includes("Other (Specify)")) {
+                    updateCustomInput(true);
+                }
+            }, 100);
         }
 
         async function sendMessage() {
@@ -843,7 +872,6 @@
                     addMessage('agent', data.response, 'chatMessages');
                     document.getElementById('analyzeBtn').disabled = false;
                     
-                    // Show regeneration banner if needed
                     if (data.needs_regeneration) {
                         document.getElementById('regenerationBanner').classList.add('show');
                     }
@@ -912,7 +940,7 @@
             document.getElementById('analysisContent').innerHTML = `
                 <div style="text-align: center; padding: 50px;">
                     <div class="spinner"></div>
-                    <p style="margin-top: 20px; color: #666;">Generating comprehensive analysis...</p>
+                    <p style="margin-top: 20px; color: #666;">Generating your personalized career analysis...</p>
                 </div>
             `;
             
@@ -927,7 +955,6 @@
                 renderAnalysis(data);
                 document.getElementById('regenerationBanner').classList.remove('show');
                 
-                // Add success message to sidebar chat
                 addMessage('agent', '✅ Your comprehensive career analysis is ready! Feel free to ask questions about any section.', 'sidebarChatMessages');
             } catch (err) {
                 document.getElementById('analysisContent').innerHTML = `
@@ -985,7 +1012,7 @@
             }
             
             if (data.missing_skills?.length) {
-                html += `<h2 class="section-title">💪 Missing Skills (Priority Order)</h2>`;
+                html += `<h2 class="section-title">💪 Skills to Develop</h2>`;
                 data.missing_skills.forEach(s => {
                     html += `
                         <div class="skill-card">
@@ -999,7 +1026,7 @@
             }
             
             if (data.certifications?.length) {
-                html += `<h2 class="section-title">📜 Required Certifications</h2>`;
+                html += `<h2 class="section-title">📜 Recommended Certifications</h2>`;
                 data.certifications.forEach(cert => {
                     html += `
                         <div class="cert-card">
@@ -1013,7 +1040,7 @@
             }
             
             if (data.projects?.length) {
-                html += `<h2 class="section-title">🚀 Portfolio Projects (Career-Specific)</h2>`;
+                html += `<h2 class="section-title">🚀 Portfolio Projects</h2>`;
                 data.projects.forEach(proj => {
                     html += `
                         <div class="project-card">
@@ -1030,9 +1057,7 @@
                 html += `<h2 class="section-title">🗺️ 6-Month Roadmap</h2>`;
                 html += `<div class="roadmap-container">`;
                 
-                // Sort months in order
-                const months = Object.keys(data.roadmap);
-                months.sort((a, b) => {
+                const months = Object.keys(data.roadmap).sort((a, b) => {
                     const aNum = parseInt(a.replace('Month ', ''));
                     const bNum = parseInt(b.replace('Month ', ''));
                     return aNum - bNum;
@@ -1056,7 +1081,7 @@
             }
             
             if (data.job_search && Object.keys(data.job_search).length > 0) {
-                html += `<h2 class="section-title">💼 Job Search Strategy</h2>`;
+                html += `<h2 class="section-title">💼 Action Plan</h2>`;
                 html += `<div class="job-search-box">`;
                 
                 for (const [key, value] of Object.entries(data.job_search)) {
@@ -1078,7 +1103,7 @@
             }
             
             html += `<div style="text-align:center;margin-top:30px;padding:20px;background:#f0f4ff;border-radius:8px;">
-                ✅ This analysis is personalized based on your answers and conversation
+                ✅ This analysis is tailored specifically to your unique profile and journey
             </div>`;
             
             document.getElementById('analysisContent').innerHTML = html;
